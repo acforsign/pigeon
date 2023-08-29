@@ -1,0 +1,631 @@
+<template>
+    <!-- take token and stick token to url  and stick image or pdf to url  -->
+    <div class="container">
+      <div class="row">
+        <div class="col-12 white-block">
+          <!-- Content of the white block goes here -->
+          <b-container class="bv-example-row inputcontainer">
+            <b-row>
+              <b-col>
+                <div class="d-flex-column h5-p__wrapper">
+                  <h5 class="inputcontainer__h5">Expiration date</h5>
+                  <p class="inputcontainer__p-1">
+                    Maximum time to download files
+                  </p>
+                </div>
+  
+                <InputComponent
+                  v-model="inputData1"
+                  id="input__1"
+                  class="enter"
+                />
+              </b-col>
+  
+              <b-col class="input__wrapper-1">
+                <div class="d-flex-column h5-p__wrapper">
+                  <h5 class="inputcontainer__h5">Maximum download times</h5>
+                  <p class="inputcontainer__p-2">
+                    Maximum number time to download file
+                  </p>
+                </div>
+                <InputComponent1
+                  v-model="inputData2"
+                  id="input__2"
+                  class="enter" ref="inputComponent1Ref"  />
+                                 
+              </b-col>
+  
+              <b-col class="input__wrapper-2">
+                <div class="d-flex-column h5-p__wrapper">
+                  <h5 class="inputcontainer__h5">Choose a custom name</h5>
+                  <p class="inputcontainer__p-3">
+                    Custom name for selected files
+                  </p>
+                </div>
+              
+                <InputComponent2
+                  v-model="inputData3"
+                  id="input__3"
+                  class="enter"
+                />
+              </b-col>
+            </b-row>
+          </b-container>
+  
+          <!---- File Upload Section -------------------------------------------------------------------------------------------------------------------------------------------------------------------------->
+          <div>
+            <div class="drop-zone" id="dropZone">
+              <input
+                @change="uploadFile"
+                type="file"
+                id="fileInput"
+                accept=".jpeg, .jpg, .png, .pdf, .zip"
+                style="
+                  opacity: 0;
+                  width: 400rem;
+                  height: 100%;
+                  cursor: pointer;
+                  z-index: 1000;
+                "
+              />
+              <p class="drop-zone__p">Drag and drop or browse to</p>
+              <span class="drop-zone__span"> choose file</span>
+              <img
+                src="../assets/add-file.png"
+                alt="addfile image"
+                class="addFile__img"
+              />
+              <div class="d-flex flex-column dropZone__p__container">
+                <p class="limit__p">File Upload Limitations</p>
+                <p class="limit__p">format: jpeg, png, pdf, zip</p>
+                <p class="limit__p">size: 1GB</p>
+              </div>
+            </div>
+  
+        
+            <!-- start modal -->
+  
+            <div @click="fetchDownloadLink" class="bt bttn">
+              <b-button v-b-modal.my-modal  >Get the link</b-button>
+              
+              <b-modal id="my-modal" hide-footer class="custom-modal" @hide="fetchNewGuestToken">
+                <!-- <b-modal id="my-modal" hide-footer class="custom-modal" @hide="handleModalHide"> -->
+                
+                <div class="d-flex flex-column align-items-center">
+                  <div class="d-flex align-items-center">
+                    <div class="iconCheck__wrapper">
+                      <!-- <b-icon-check2 class="iconCheck" /> -->
+                      <!-- <b-icon-check2-circle-fill class="green-check-icon" /> -->
+                      <svg xmlns="http://www.w3.org/2000/svg" width="22.133" height="22.133" viewBox="773.933 626.933 22.133 22.133" class="svgclass">
+                        <g data-name="vuesax/linear/tick-circle"><g data-name="tick-circle">
+                          <path d="M785 648c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10Z"
+                           stroke-linejoin="round" stroke-linecap="round" stroke-width="1.5"
+                            stroke="#00827e" fill="transparent" data-name="Vector"/>
+                            <path d="m780.75 638 2.83 2.83 5.67-5.66" stroke-linejoin="round"
+                             stroke-linecap="round" stroke-width="1.5" stroke="#00827e" fill="transparent" data-name="Vector"/>
+                          </g></g></svg>
+                    </div>
+                    <p class="ml-2  " id='modal__p'>Uploaded Successfully</p>
+                  </div>
+                  <br> <br>
+  
+                  <div class="d-flex align-items-center my-3">
+                    <div class="linkicon__wrapper">
+                      <b-icon-link class="linkicon" />
+                    </div>
+                    <input 
+                      ref="downloadLinkInput"
+                      class="form-control mx-2 modal__input"
+                      placeholder="Enter link..."
+                      :value="downloadLink"
+                    />
+                    <b-button @click="copyLink" variant="primary" class="copy__modal">Copy link</b-button
+                      
+                    >
+                  </div>
+  
+                  <div class="social-icons">
+                    <b-icon-facebook class="social-icon" />
+                    <b-icon-skype class="social-icon" />
+                    <b-icon-twitter class="social-icon" />
+                    <b-icon-whatsapp class="social-icon" />
+                  </div>
+                </div>
+              </b-modal>
+            </div>
+  
+            <!-- end of  modal -->
+  
+          </div>
+  
+          <!--end of input zone-------------------------------------------------------------------------------------------------------------------------------------------------------------------->
+  
+          <!-- <Modal :downloadLink="downloadLink"   /> -->
+  
+          <CheckBox v-model="downloadAsZip" />
+         
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  const token = "c14d0378-02b0-4ab8-8e5d-cc785fe636ce";
+  const baseUrl = "https://192.168.2.51/api/v1/files/temp?guest_token=";
+  ///const expiretoken="28ed1450-1d71-4147-8aad-b95e9e3089d7";
+  
+  import axios from "axios";
+  import { BContainer, BFormFile, BImg } from "bootstrap-vue";
+  import InputComponent2 from "./InputComponent2";
+  import InputComponent1 from "./InputComponent1";
+  import InputComponent from "./InputComponent.vue";
+  import Button from "./Button.vue";
+  import CheckBox from "./CheckBox";
+  import DropZone from "./DropZone.vue";
+  import Modal from "./Modal.vue";
+  
+  import Input from "./Input.vue";
+  
+  export default {
+    name: "Bod",
+  
+    components: {
+      CheckBox,
+      Button,
+      InputComponent,
+      InputComponent1,
+      InputComponent2,
+      BContainer,
+      BFormFile,
+      BImg,
+      DropZone,
+      Input,
+      Modal,
+      
+  
+      
+    },
+    props: {},
+    data() {
+      return {
+        downloadLink: "",
+        guestToken: "",
+        inputData1: "",
+        inputData2: "",
+        inputData3: "",
+        downloadLinkResponse: "",
+        downloadAsZip:0,
+       
+      };
+    },
+  
+    async created() {
+      try {
+        const response = await axios.post(
+          "https://192.168.2.51/api/v1/users/guest"
+        );
+        console.log("Guest Token Response:", response);
+        if (response.data) {
+          this.guestToken = response.data.guest_token;
+  
+          console.log(this.guestToken);
+        }
+      } catch (error) {
+        console.error("Error getting guest token:", error);
+      }
+    },
+  
+    methods: {
+      
+  
+      async uploadFile(event) {
+        const file = event.target.files[0];
+  
+        if (file) {
+          const formData = new FormData();
+  
+          formData.append("file", file);
+  
+          try {
+            const response = await this.uploadFileToServer(formData);
+  
+            if (response.data && response.data.downloadLink) {
+              // this.downloadLink = response.data.downloadLink;
+              console.log("Download Link:", response); // Check if the link is available
+              this.downloadLink = response.data.downloadLink;
+            }
+          } catch (error) {
+            console.error("Error uploading file:", error);
+          }
+        }
+      },
+      async uploadFileToServer(formData) {
+        try {
+          const response = await axios.post(
+            "https://192.168.2.51/api/v1/files/temp?guest_token=" +
+              this.guestToken,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+  
+          return response;
+        } catch (error) {
+          throw error;
+        }
+      },
+  
+      
+  
+      //////////////////////// download section
+      ///////second async/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      async fetchDownloadLink() {
+        try {
+          const formData = new FormData();
+          formData.append("expires_at", this.inputData1);
+          formData.append("max_download_count", this.inputData2);
+          formData.append("save_as_name", this.inputData3);
+          formData.append("timezone", "America/Los_Angeles");
+  
+          console.log('doewnloadzip',this.downloadAsZip);
+  
+          if(this.downloadAsZip){
+  
+            formData.append("zip_files",1);
+          }
+  
+          else{
+            formData.append("zip_files",0);
+  
+          }
+          const response = await axios.post(
+            "https://192.168.2.51/api/v1/files?guest_token=" + this.guestToken,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
+  
+          if (response.data && response.data.download_link) {
+            this.downloadLink = response.data.download_link;
+             if (this.downloadAsZip) {
+          this.downloadLink += ".zip"; // Append .zip extension to the link
+        }
+            this.downloadLinkResponse = JSON.stringify(response.data, null, 2); // Store the response preview
+            console.log("Download Link:", this.downloadLink);
+          }
+        } catch (error) {
+          console.error("Error fetching download link:", error);
+          // Handle the error appropriately, show an error message to the user
+        }
+      },
+  
+     
+  
+      //////////////////////////////////////////////////////// modal method start
+  
+      copyLink() {
+        const inputElement = this.$refs.downloadLinkInput; // Get the input element
+        inputElement.select(); // Select the text inside the input
+        document.execCommand("copy"); // Copy the selected text to the clipboard
+      },
+  
+      //modal method end
+  
+  
+  ////////////////////////////////other guess token 
+  
+  async fetchNewGuestToken() {
+        try {
+          const response = await axios.post(
+            "https://192.168.2.51/api/v1/users/guest"
+          );
+          console.log("New Guest Token Response:", response);
+          if (response.data) {
+            this.guestToken = response.data.guest_token;
+            console.log(this.guestToken);
+          }
+        } catch (error) {
+          console.error("Error getting new guest token:", error);
+        }
+      },
+  
+  
+  
+  
+    },
+  
+    /// download link section ________________________________________________________________________________________
+  
+    computed: {
+      isFormFilled() {
+        return (
+          this.inputData1 && // Replace with your actual data property
+          this.inputData2 && // Replace with your actual data property
+          this.inputData3 // Replace with your actual data property
+        );
+      },
+    },
+  };
+  </script>
+  
+  <!-- Add "scoped" attribute to limit CSS to this component only -->
+  <style scoped lang="scss">
+  /////////////////// start scss
+  $oneHalf:1.5rem;
+  $inContainFontSize:0.85rem;
+  $babaColor:#00BABA;
+  $whiteColor:#ffffff;
+  $inputbgColor:#f5f1f1;
+  $btnMixColor:#828282;
+  $DropZonePbgColor:#4a4a4a;
+  $enterSolidColor:#808080;
+  $aLinkColor:#42b983;
+  $dashZoneColor:#019797;
+  $blackColor:#000000;
+  @mixin positionMix($top,$right,$bottom,$left){
+  
+    position: absolute;
+    top: $top;
+    right: $right;
+    bottom: $bottom;
+    left: $left;
+  }
+  @mixin felJ(){
+  
+    display: flex;
+    justify-content: center;
+    
+  }
+  
+  @mixin bttnMix(){
+  
+    @include positionMix(89%,0% ,0% ,76.5% );
+    border: 0;
+    width: 9.7%;
+    // left: 76.5%;
+    // bottom: 7%;
+    border-radius: 0.5rem;
+    height: 40px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.015);
+    background-color: #d4d4d4;
+    color: $btnMixColor;
+    font-size: 14px;
+    font-weight: 400;
+    .bt {
+      color: $DropZonePbgColor;
+      background-color: #3fd87a;
+    }
+  }
+  
+  @mixin zindexPointer($index){
+    z-index: $index;
+    cursor: pointer;
+  
+  }
+  
+  ///////////////////////end scss
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .copy__modal{
+  
+    @include felJ();
+    background-color: $babaColor; 
+     color: $whiteColor;
+     width: 95.38px;
+    height: 40px;
+    align-items: center;
+    text-align: center;
+  }
+  .dropZone__p__container {
+    
+    width: 100%;
+    position: absolute;
+    margin-top: 23%;
+  }
+  
+  .limit__p {
+    color: $btnMixColor !important;
+    font-size: 14px;
+  }
+  
+  .addFile__img {
+    @include positionMix(8rem,0,0,45%);
+    display: inline;
+    // position: absolute;
+    // top: 8rem;
+  }
+  
+  .input__wrapper-2 {
+    margin-left: -8rem;
+    transform: translateX(-3rem);
+  }
+  .input__wrapper-1 {
+    margin-left: -5.5rem;
+  }
+  .drop-zone__span {
+    @include positionMix(49%,0,0,60%);
+    @include zindexPointer(500);
+    color: $babaColor;
+    font-size:$oneHalf;
+    text-decoration: underline;
+    width: 15%;
+  }
+  .drop-zone__p {
+    @include positionMix(49%,0,0,-37rem);
+    @include zindexPointer(500);
+    color: $blackColor;
+    font-size: 1.4rem;
+    width: 100%;
+    font-weight: 400;
+    display: inline;
+    transform: translateX(33.5rem);
+    // right: 37rem;
+  }
+  
+  .drop-zone {
+    @include felJ();
+    border: 2px dashed $dashZoneColor;
+    background-color: $whiteColor;
+    width: 51.62rem;
+    border-radius: 0.6rem;
+    height: 520px;
+    align-items: center;
+    cursor: pointer;
+    margin: 2rem auto;
+    position: relative;
+  }
+  .drop-zone:hover {
+    border: 2px dashed $babaColor;
+  }
+  .drop-zone p {
+    color: $DropZonePbgColor;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  #input__1 {
+    background-color: $inputbgColor;
+    transform: translateX(8rem);
+    margin: 0.5rem;
+    width: 16.58rem;
+  }
+  #input__2 {
+    background-color: $inputbgColor;
+    margin: 0.5rem 5.5rem;
+    width: 16.58rem;
+  }
+  #input__3 {
+    background-color: $inputbgColor;
+    transform: translateX(1.2rem);
+    margin: 0.5rem;
+    width: 16.58rem;
+  }
+  .enter {
+    border: 1px solid $enterSolidColor;
+    margin-left: 20%;
+    width: 70%;
+    height: 38px;
+    border-radius: 0.5rem;
+  }
+  .enter:hover {
+    border: 1px solid $babaColor;
+  }
+  
+  .inputcontainer__p-1 {
+    font-size:$inContainFontSize;
+    transform: translateX($oneHalf);
+  }
+  .inputcontainer__p-2 {
+    font-size:$inContainFontSize;
+    transform: translateX(-0.4rem);
+  }
+  .inputcontainer__p-3 {
+    font-size: $inContainFontSize;
+    transform: translateX(-1rem);
+  }
+  .h5-p__wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+  .inputcontainer__h5 {
+    font-weight: bold;
+    margin-top: -2rem;
+    margin-bottom: 1rem;
+  }
+  .inputcontainer {
+    z-index: 200;
+    margin-top: 6%;
+  }
+  .white-block {
+    @include positionMix(50%,0,0,50%);
+    background-color: $whiteColor;
+    border-radius:$oneHalf;
+    width: 60%;
+    margin: 0 auto;
+    transform: translate(-50%, -50%);
+    height: 85vh;
+  }
+  
+  h3 {
+    margin: 40px 0 0;
+  }
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  li {
+    display: inline-block;
+    margin: 0 10px;
+  }
+  a {
+    color: $aLinkColor
+  
+  }
+  
+  .bttn {
+    @include bttnMix();
+  }
+  // ////////////////////////modal style start
+  .iconCheck__wrapper{
+    width: 10%;
+    transform: rotate(-50deg);
+    position: relative;
+  }
+  .linkicon__wrapper {
+    width: 10%;
+    transform: rotate(130deg);
+  }
+  .iconCheck,
+  .linkicon,
+  .social-icon {
+    font-size: 24px;
+  }
+  
+  .social-icons {
+    @include felJ();
+    gap: 10px;
+    margin-top: 20px;
+  }
+  /* Custom CSS to remove border of close button */
+  .modal-header .close {
+    border: none;
+  }
+  
+  
+  .green-check-icon {
+    color: $babaColor; 
+    border: 2px solid $babaColor; 
+    font-size: 24px;
+    border-radius: 50%; 
+    padding: 5px; 
+    margin-right: 10px; 
+  }
+  
+  #modal__p{
+    position: absolute;
+    font-size: 1.14rem;
+      font-weight: 700;
+      margin-bottom: 25px;
+      text-align: center;
+       transform: translateY(2rem) translateX(-4rem);
+  }
+  .svgclass{
+    position: absolute;
+    transform: rotate(50deg) translateX(-102px) translateY(24px);
+    margin-right: -2rem;
+  }
+  .modal__input{
+  width: 250px;
+  }
+  //modal method style end
+  </style>
+  
